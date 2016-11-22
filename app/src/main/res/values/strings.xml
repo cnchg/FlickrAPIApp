@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Flickr API App</string>
+    <string name="action_settings">Settings</string>
+</resources>
