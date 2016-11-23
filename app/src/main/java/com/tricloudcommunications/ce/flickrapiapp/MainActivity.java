@@ -1,7 +1,11 @@
 package com.tricloudcommunications.ce.flickrapiapp;
 
+import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -28,12 +32,62 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.KeyStore;
+import java.util.concurrent.ExecutionException;
 
 import javax.net.ssl.HttpsURLConnection;
 
 public class MainActivity extends AppCompatActivity {
 
     RelativeLayout relativeLayout;
+    String flickrPhotoID = "";
+    String flickrPhotoOwnerID = "";
+    String flickrPhotoFarmID = "";
+    String flickrPhotoServerID = "";
+    String flickrPhotoSecret = "";
+
+
+
+
+    public void setGlobalVariables(
+            String flickrPhotoID,
+            String flickrPhotoOwnerID,
+            String flickrPhotoFarmID,
+            String flickrPhotoServerID,
+            String flickrPhotoSecret
+            ){
+
+        //Log.i("Photo ID", photoID);
+
+        //String values of all the data we want from the JSON response
+       //flickrPhotoID = photoID;
+       //flickrPhotoOwnerID = photOwnerID;
+
+        //FlickrImageDownloader flickrImageDownloader = new FlickrImageDownloader();
+        //flickrImageDownloader.execute("http://www.flickr.com/photos/"+photoOwnerID+"/"+photoID);
+
+        //start and execute the ImageDownloader() class to download the weather icon image
+        FlickrImageDownloader downloadImageTask = new FlickrImageDownloader();
+        Bitmap myImage;
+
+        try {
+
+            //myImage = downloadImageTask.execute("http://openweathermap.org/img/w/"+iconImageName+".png").get();
+            //myImage = downloadImageTask.execute("http://openweathermap.org/img/w/10d.png").get();
+            //myImage = downloadImageTask.execute("https://www.flickr.com/photos/"+photoOwnerID+"/"+photoID).get();
+            myImage = downloadImageTask.execute("https://farm"+flickrPhotoFarmID+".staticflickr.com/"+flickrPhotoServerID+"/"+flickrPhotoID+"_"+flickrPhotoSecret+".jpg").get();
+
+            Drawable drawable = new BitmapDrawable(getResources(), myImage);
+            relativeLayout.setBackground(drawable);
+
+
+
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,6 +142,7 @@ public class MainActivity extends AppCompatActivity {
             String result = "";
 
             try{
+                //Set up Https request
                 URL url = new URL(params[0]);
                 HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
                 conn.setDoOutput(true);
@@ -100,6 +155,7 @@ public class MainActivity extends AppCompatActivity {
                 os.flush();
                 os.close();
 
+                //Read the data from the response
                 InputStream is = conn.getInputStream();
                 InputStreamReader reader = new InputStreamReader(is);
                 int data = reader.read();
@@ -124,9 +180,7 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
 
-            //String values of all the data we want from the JSON response
-            String flickrPhotoID = "";
-            String flickrPhotoOwner = "";
+
 
             try {
 
@@ -155,8 +209,20 @@ public class MainActivity extends AppCompatActivity {
                 JSONObject flickerPhotos = photoArray.getJSONObject(0);
 
                 flickrPhotoID = flickerPhotos.getString("id");
+                flickrPhotoOwnerID = flickerPhotos.getString("owner");
+                flickrPhotoFarmID = flickerPhotos.getString("farm");
+                flickrPhotoServerID = flickerPhotos.getString("server");
+                flickrPhotoSecret = flickerPhotos.getString("secret");
 
-                Log.i("Photo Object Data", flickrPhotoID);
+
+                setGlobalVariables(flickrPhotoID,flickrPhotoOwnerID,flickrPhotoFarmID,flickrPhotoServerID,flickrPhotoSecret);
+
+                Log.i("Photo Object ID", flickrPhotoID);
+                Log.i("Photo Object Owner", flickrPhotoOwnerID);
+                Log.i("Photo Object farm", flickrPhotoFarmID);
+                Log.i("Photo Object server", flickrPhotoServerID);
+                Log.i("Photo Object secret", flickrPhotoSecret);
+
 
             } catch (JSONException e) {
 
@@ -171,9 +237,43 @@ public class MainActivity extends AppCompatActivity {
     public class FlickrImageDownloader extends AsyncTask<String, Void, Bitmap>{
 
         @Override
-        protected Bitmap doInBackground(String... params) {
+        protected Bitmap doInBackground(String... urls) {
+
+            String result;
+            URL url;
+            HttpURLConnection urlConnection;
+
+            try {
+
+                //Set up Https request
+                url = new URL(urls[0]);
+                HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+                conn.setDoOutput(true);
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json");
+                String input = urls[0];
+                Log.i("Flickr API Content","Sending: "+input);
+                OutputStream os = conn.getOutputStream();
+                os.write(input.getBytes());
+                os.flush();
+                os.close();
+
+                InputStream inputStream = conn.getInputStream();
+                Bitmap myBitmap = BitmapFactory.decodeStream(inputStream);
+                return myBitmap;
+
+            } catch (MalformedURLException e) {
+
+                e.printStackTrace();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+
             return null;
         }
+
     }
 
     @Override
