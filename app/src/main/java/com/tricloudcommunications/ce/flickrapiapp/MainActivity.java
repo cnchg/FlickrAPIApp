@@ -76,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
             //myImage = downloadImageTask.execute("https://www.flickr.com/photos/"+photoOwnerID+"/"+photoID).get();
             myImage = downloadImageTask.execute("https://farm"+flickrPhotoFarmID+".staticflickr.com/"+flickrPhotoServerID+"/"+flickrPhotoID+"_"+flickrPhotoSecret+".jpg").get();
 
+            //Source: http://stackoverflow.com/questions/7466900/how-to-use-relativelayout-setbackgrounddrawable-with-a-bitmap
             Drawable drawable = new BitmapDrawable(getResources(), myImage);
             relativeLayout.setBackground(drawable);
 
