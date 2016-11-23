@@ -1,6 +1,7 @@
 package com.tricloudcommunications.ce.flickrapiapp;
 
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -11,6 +12,11 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.RelativeLayout;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -26,6 +32,8 @@ import java.security.KeyStore;
 import javax.net.ssl.HttpsURLConnection;
 
 public class MainActivity extends AppCompatActivity {
+
+    RelativeLayout relativeLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,19 +51,40 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        relativeLayout = (RelativeLayout) findViewById(R.id.content_main);
 
+        /*
+         Source1: https://www.flickr.com/services/api/explore/flickr.photos.search
+         Source2: https://www.flickr.com/services/api/misc.urls.html
+         Note: To get back a clean JSON response (no extra text in the front or back)-
+         Make sure that you 'Do not sign call' by adding this to the end of the url string '&format=json&nojsoncallback=1'
+        */
         FlickrAPIDataDownload getFlickrDataTask = new FlickrAPIDataDownload();
         //getFlickrDataTask.execute("http://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=65dd98b8db61ede0ad592cb221e31201&tags=sun&media=photos&per_page=1&page=1&format=json");
-        getFlickrDataTask.execute("https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=65dd98b8db61ede0ad592cb221e31201&tags=sun&media=photos&per_page=1&page=1&format=json");
+        getFlickrDataTask.execute("https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=65dd98b8db61ede0ad592cb221e31201&tags=sun&media=photos&per_page=1&page=1&format=json&nojsoncallback=1");
     }
 
     public class FlickrAPIDataDownload extends AsyncTask<String, Void, String>{
 
         @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+            relativeLayout.setBackgroundColor(Color.DKGRAY);
+
+        }
+
+        @Override
         protected String doInBackground(String... params) {
 
-            //Source1: https://www.codota.com/android/scenarios/52fcbd97da0ab8e225ec74c6/javax.net.ssl.HttpsURLConnection?tag=dragonfly
-            //Source2: http://stackoverflow.com/questions/16504527/how-to-do-an-https-post-from-android
+            /*
+               Note: the code below from the source below is for making a HTTPS connection and then reading the response
+               from that secure connection. In this case it's for Flickr but can be used in any other case where a secure
+               Https connection needs to be establish before communicating with a host.
+               Source1: https://www.codota.com/android/scenarios/52fcbd97da0ab8e225ec74c6/javax.net.ssl.HttpsURLConnection?tag=dragonfly
+               Source2: http://stackoverflow.com/questions/16504527/how-to-do-an-https-post-from-android
+            */
+
             String result = "";
 
             try{
@@ -65,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/json");
                 String input = params[0];
-                Log.i("Appygram Example","Sending: "+input);
+                Log.i("Flickr API Content","Sending: "+input);
                 OutputStream os = conn.getOutputStream();
                 os.write(input.getBytes());
                 os.flush();
@@ -75,29 +104,71 @@ public class MainActivity extends AppCompatActivity {
                 InputStreamReader reader = new InputStreamReader(is);
                 int data = reader.read();
                 while (data !=-1){
-
                     char current = (char) data;
                     result += current;
                     data = reader.read();
-
                 }
 
-                Log.i("Appygram Example","Appygram sent with result "+result);
-
+                //Log.i("Flickr API Content","API call sent with result "+result);
                 return result;
 
-            } catch (IOException x) {
-                Log.e("Appygram Example","Error sending appygram", x);
+            } catch (IOException e) {
+                //Log.e("Flickr API Content","Error sending API call", e);
             }
 
             return null;
 
+        }
 
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+
+            //String values of all the data we want from the JSON response
+            String flickrPhotoID = "";
+            String flickrPhotoOwner = "";
+
+            try {
+
+                JSONObject jsonObject = new JSONObject(result);
+                JSONObject photoObject = jsonObject.getJSONObject("photos");
+                JSONArray photoArray = photoObject.getJSONArray("photo");
+
+                /*
+                NOTE:
+                  We have only one photo in this exercise, if we wanted or had more photos
+                  the we would use the array key number to get the photo with that key
+
+                  Take a look at the chosen answer from this source:
+                  http://stackoverflow.com/questions/19205527/json-parsing-in-android-flickr-api
+                  Example of JSON for more than one Image in the photo array
+                    JSONObject json = new JSONObject(jsonString);
+                    JSONObject photos = json.getJSONObject("photos");
+                    JSONArray photo = photos.getJSONArray("photo");
+                    if (photo.length() > 0) {
+                        JSONObject first = photo.getJSONObject(0);
+                        String picOwner = first.getString("owner");
+                        String picID = first.getString("id");
+                    }
+                */
+
+                JSONObject flickerPhotos = photoArray.getJSONObject(0);
+
+                flickrPhotoID = flickerPhotos.getString("id");
+
+                Log.i("Photo Object Data", flickrPhotoID);
+
+            } catch (JSONException e) {
+
+                e.printStackTrace();
+
+            }
+
+            //Log.i("On Post Execute", result);
         }
     }
 
     public class FlickrImageDownloader extends AsyncTask<String, Void, Bitmap>{
-
 
         @Override
         protected Bitmap doInBackground(String... params) {
