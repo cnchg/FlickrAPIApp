@@ -114,9 +114,10 @@ public class MainActivity extends AppCompatActivity {
          Note: To get back a clean JSON response (no extra text in the front or back)-
          Make sure that you 'Do not sign call' by adding this to the end of the url string '&format=json&nojsoncallback=1'
         */
+        String apiKey = "";
         FlickrAPIDataDownload getFlickrDataTask = new FlickrAPIDataDownload();
-        //getFlickrDataTask.execute("http://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=65dd98b8db61ede0ad592cb221e31201&tags=sun&media=photos&per_page=1&page=1&format=json");
-        getFlickrDataTask.execute("https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=65dd98b8db61ede0ad592cb221e31201&tags=sun&media=photos&per_page=1&page=1&format=json&nojsoncallback=1");
+        //getFlickrDataTask.execute("http://api.flickr.com/services/rest/?method=flickr.photos.search&api_key="+apiKey+"&tags=sun&media=photos&per_page=1&page=1&format=json");
+        getFlickrDataTask.execute("https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key="+apiKey+"&tags=sun&media=photos&per_page=1&page=1&format=json&nojsoncallback=1");
     }
 
     public class FlickrAPIDataDownload extends AsyncTask<String, Void, String>{
